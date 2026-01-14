@@ -17,6 +17,17 @@ A top-down dungeon crawler game that teaches SQL concepts through gameplay. Buil
 - **Secondary**: Mac (macOS 13+)
 - **Orientation**: Supports all orientations (portrait and landscape work well)
 
+## ⚠️ Important: Pull Latest Changes
+
+If you see errors about `.iOSApplication` not being recognized, pull the latest changes:
+
+```bash
+cd ~/Documents/swift-game  # or wherever your project is
+git pull origin claude/sql-dungeon-game-3xQoF
+```
+
+Then close and reopen Xcode. The errors should be gone!
+
 ## 🚀 Setup Instructions
 
 ### Option 1: Xcode (Recommended for Development)
@@ -104,10 +115,11 @@ A top-down dungeon crawler game that teaches SQL concepts through gameplay. Buil
 ```
 swift-game/
 ├── Package.swift          # Swift Package definition
-├── App.swift             # App entry point (SwiftUI)
-├── GameView.swift        # Bridge between SwiftUI and SpriteKit
-├── GameScene.swift       # Main game scene (dungeon room)
-├── Player.swift          # Player character class
+├── Sources/              # All Swift source files
+│   ├── App.swift         # App entry point (SwiftUI)
+│   ├── GameView.swift    # Bridge between SwiftUI and SpriteKit
+│   ├── GameScene.swift   # Main game scene (dungeon room)
+│   └── Player.swift      # Player character class
 └── README.md            # This file
 ```
 
