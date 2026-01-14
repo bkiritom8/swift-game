@@ -43,6 +43,12 @@ class GameScene: SKScene {
         if let view = view {
             size = view.bounds.size
         }
+
+        // Ensure user interaction is enabled
+        isUserInteractionEnabled = true
+
+        // Debug: Print scene size to verify it's set correctly
+        print("🎮 Game scene initialized with size: \(size)")
     }
 
     /// Create the dungeon room background
@@ -132,8 +138,10 @@ class GameScene: SKScene {
     /// Handle touch input on iPhone/iPad
     /// When the player taps, the character moves to that location
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        print("👆 Touch detected!")
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        print("📍 Touch location: \(location)")
         handleInput(at: location)
     }
     #endif
@@ -142,7 +150,9 @@ class GameScene: SKScene {
     /// Handle mouse click on Mac
     /// When the player clicks, the character moves to that location
     override func mouseDown(with event: NSEvent) {
+        print("🖱️ Mouse click detected!")
         let location = event.location(in: self)
+        print("📍 Click location: \(location)")
         handleInput(at: location)
     }
     #endif
@@ -152,10 +162,14 @@ class GameScene: SKScene {
     /// Process input from either touch or mouse
     /// Moves the player to the target location while respecting boundaries
     private func handleInput(at location: CGPoint) {
+        print("🎯 handleInput called with location: \(location)")
+
         // Clamp the target position to stay within boundaries
         let targetX = max(minX, min(maxX, location.x))
         let targetY = max(minY, min(maxY, location.y))
         let clampedLocation = CGPoint(x: targetX, y: targetY)
+
+        print("✅ Moving player to clamped location: \(clampedLocation)")
 
         // Tell the player to move to this location
         player.move(to: clampedLocation)

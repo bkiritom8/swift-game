@@ -25,6 +25,7 @@ struct GameView: View {
                 Spacer()
                 // Future: Add game UI here
             }
+            .allowsHitTesting(false) // Don't block touches to the game scene
         }
         .background(Color.black) // Fallback background color
     }
