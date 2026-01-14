@@ -1,4 +1,7 @@
 import SpriteKit
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// Main game scene for the SQL Dungeon Crawler
 /// Handles the dungeon room, player, and input (touch/click)
