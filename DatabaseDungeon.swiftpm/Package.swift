@@ -1,13 +1,12 @@
-// swift-tools-version: 5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version: 5.5
 
 import PackageDescription
+import AppleProductTypes
 
 let package = Package(
     name: "DatabaseDungeon",
     platforms: [
-        // Requires iOS 15.0+ for ARKit and RealityKit features
-        .iOS(.v15)
+        .iOS("15.0")
     ],
     products: [
         .iOSApplication(
@@ -27,7 +26,6 @@ let package = Package(
                 .landscapeLeft
             ],
             capabilities: [
-                // Request camera permission for AR
                 .camera(purposeString: "AR dungeon experience requires camera access to place the dungeon in your real world environment.")
             ]
         )
