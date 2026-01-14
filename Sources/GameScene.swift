@@ -12,8 +12,20 @@ class GameScene: SKScene {
     /// The player character
     private var player: Player!
 
-    /// Dungeon room boundaries (inset from screen edges)
-    private let roomMargin: CGFloat = 40
+    /// Camera that follows the player
+    private var gameCamera: SKCameraNode!
+
+    /// World size configuration
+    private let tileSize: CGFloat = 64
+    private let worldWidthInTiles: Int = 30  // 30 tiles wide
+    private let worldHeightInTiles: Int = 50 // 50 tiles tall
+
+    /// Calculated world dimensions
+    private var worldWidth: CGFloat { CGFloat(worldWidthInTiles) * tileSize }
+    private var worldHeight: CGFloat { CGFloat(worldHeightInTiles) * tileSize }
+
+    /// Dungeon room boundaries (margin from world edges)
+    private let worldMargin: CGFloat = 40
 
     /// Minimum and maximum positions the player can move to
     private var minX: CGFloat = 0
@@ -26,6 +38,7 @@ class GameScene: SKScene {
     /// Called when the scene is first created
     override func didMove(to view: SKView) {
         setupScene()
+        setupCamera()
         setupDungeonBackground()
         setupPlayer()
         calculateBoundaries()
@@ -38,34 +51,41 @@ class GameScene: SKScene {
         // Dark background for dungeon atmosphere
         backgroundColor = SKColor(red: 0.15, green: 0.12, blue: 0.12, alpha: 1.0)
 
-        // Use the view's size for the scene
-        // This ensures proper sizing on both iPhone and Mac
-        if let view = view {
-            size = view.bounds.size
-        }
+        // Set the scene size to the full world size
+        // The camera will handle showing only the visible portion
+        size = CGSize(width: worldWidth, height: worldHeight)
 
         // Ensure user interaction is enabled
         isUserInteractionEnabled = true
 
-        // Debug: Print scene size to verify it's set correctly
-        print("🎮 Game scene initialized with size: \(size)")
+        // Debug: Print world and viewport sizes
+        print("🗺️  World size: \(worldWidthInTiles)x\(worldHeightInTiles) tiles")
+        print("🎮 Scene size: \(size) (\(worldWidth)x\(worldHeight) points)")
+        if let view = view {
+            print("📱 Viewport size: \(view.bounds.size)")
+        }
+    }
+
+    /// Set up the camera to follow the player
+    private func setupCamera() {
+        gameCamera = SKCameraNode()
+        camera = gameCamera
+        addChild(gameCamera)
+
+        print("📷 Camera created and attached to scene")
     }
 
     /// Create the dungeon room background
     /// Uses a grid of stone tiles for that classic dungeon feel
+    /// Now covers the entire world (30x50 tiles)
     private func setupDungeonBackground() {
         // Stone floor color (dark gray with slight brown tint)
         let stoneColor = SKColor(red: 0.25, green: 0.23, blue: 0.21, alpha: 1.0)
         let darkerStone = SKColor(red: 0.20, green: 0.18, blue: 0.16, alpha: 1.0)
 
-        // Create a tile-based floor pattern
-        let tileSize: CGFloat = 64
-        let cols = Int(size.width / tileSize) + 2
-        let rows = Int(size.height / tileSize) + 2
-
-        // Create alternating stone tiles for visual interest
-        for row in 0..<rows {
-            for col in 0..<cols {
+        // Create alternating stone tiles across the entire world
+        for row in 0..<worldHeightInTiles {
+            for col in 0..<worldWidthInTiles {
                 let tile = SKSpriteNode(color: (row + col) % 2 == 0 ? stoneColor : darkerStone,
                                        size: CGSize(width: tileSize, height: tileSize))
                 tile.position = CGPoint(x: CGFloat(col) * tileSize, y: CGFloat(row) * tileSize)
@@ -75,61 +95,73 @@ class GameScene: SKScene {
             }
         }
 
-        // Add room walls (dark borders)
+        // Add walls around the world boundary
         createWalls()
+
+        print("🏰 Dungeon background created: \(worldWidthInTiles)x\(worldHeightInTiles) tiles")
     }
 
-    /// Create visible walls around the dungeon room
+    /// Create visible walls around the world boundary
     private func createWalls() {
         let wallColor = SKColor(red: 0.1, green: 0.08, blue: 0.08, alpha: 1.0)
-        let wallThickness: CGFloat = roomMargin
+        let wallThickness: CGFloat = worldMargin
 
-        // Top wall
+        // Top wall (across entire world width)
         let topWall = SKSpriteNode(color: wallColor,
-                                   size: CGSize(width: size.width, height: wallThickness))
-        topWall.position = CGPoint(x: size.width / 2, y: size.height - wallThickness / 2)
+                                   size: CGSize(width: worldWidth, height: wallThickness))
+        topWall.position = CGPoint(x: worldWidth / 2, y: worldHeight - wallThickness / 2)
         topWall.zPosition = -5
         addChild(topWall)
 
         // Bottom wall
         let bottomWall = SKSpriteNode(color: wallColor,
-                                      size: CGSize(width: size.width, height: wallThickness))
-        bottomWall.position = CGPoint(x: size.width / 2, y: wallThickness / 2)
+                                      size: CGSize(width: worldWidth, height: wallThickness))
+        bottomWall.position = CGPoint(x: worldWidth / 2, y: wallThickness / 2)
         bottomWall.zPosition = -5
         addChild(bottomWall)
 
-        // Left wall
+        // Left wall (across entire world height)
         let leftWall = SKSpriteNode(color: wallColor,
-                                    size: CGSize(width: wallThickness, height: size.height))
-        leftWall.position = CGPoint(x: wallThickness / 2, y: size.height / 2)
+                                    size: CGSize(width: wallThickness, height: worldHeight))
+        leftWall.position = CGPoint(x: wallThickness / 2, y: worldHeight / 2)
         leftWall.zPosition = -5
         addChild(leftWall)
 
         // Right wall
         let rightWall = SKSpriteNode(color: wallColor,
-                                     size: CGSize(width: wallThickness, height: size.height))
-        rightWall.position = CGPoint(x: size.width - wallThickness / 2, y: size.height / 2)
+                                     size: CGSize(width: wallThickness, height: worldHeight))
+        rightWall.position = CGPoint(x: worldWidth - wallThickness / 2, y: worldHeight / 2)
         rightWall.zPosition = -5
         addChild(rightWall)
+
+        print("🧱 World walls created at boundaries")
     }
 
     /// Create and position the player character
     private func setupPlayer() {
-        // Create player at the center of the room
-        let startPosition = CGPoint(x: size.width / 2, y: size.height / 2)
+        // Start player at the bottom-center of the world
+        // This gives them room to explore upward and to the sides
+        let startPosition = CGPoint(x: worldWidth / 2, y: worldHeight / 4)
         player = Player(position: startPosition)
         addChild(player)
+
+        // Position camera at player's starting location
+        gameCamera.position = startPosition
+
+        print("👤 Player spawned at: \(startPosition)")
     }
 
     /// Calculate the boundaries where the player can move
-    /// This prevents the player from walking into walls or off-screen
+    /// This prevents the player from walking into walls or leaving the world
     private func calculateBoundaries() {
         let playerRadius = player.size.width / 2
 
-        minX = roomMargin + playerRadius
-        maxX = size.width - roomMargin - playerRadius
-        minY = roomMargin + playerRadius
-        maxY = size.height - roomMargin - playerRadius
+        minX = worldMargin + playerRadius
+        maxX = worldWidth - worldMargin - playerRadius
+        minY = worldMargin + playerRadius
+        maxY = worldHeight - worldMargin - playerRadius
+
+        print("🚧 World boundaries: X[\(minX) - \(maxX)], Y[\(minY) - \(maxY)]")
     }
 
     // MARK: - Input Handling
@@ -180,6 +212,31 @@ class GameScene: SKScene {
     /// Called every frame (60 times per second)
     /// Use this for continuous game logic updates
     override func update(_ currentTime: TimeInterval) {
-        // Future: Update game state, check for collisions, etc.
+        // Update camera to follow player smoothly
+        updateCamera()
+    }
+
+    /// Smoothly move camera to follow the player
+    private func updateCamera() {
+        // Smoothly interpolate camera position toward player position
+        let lerpFactor: CGFloat = 0.1 // Lower = smoother, higher = more responsive
+        let targetPosition = player.position
+
+        let newX = gameCamera.position.x + (targetPosition.x - gameCamera.position.x) * lerpFactor
+        let newY = gameCamera.position.y + (targetPosition.y - gameCamera.position.y) * lerpFactor
+
+        // Get viewport size to calculate camera boundaries
+        guard let view = view else { return }
+        let viewportWidth = view.bounds.width
+        let viewportHeight = view.bounds.height
+
+        // Clamp camera position so it doesn't show area outside the world
+        let halfViewportWidth = viewportWidth / 2
+        let halfViewportHeight = viewportHeight / 2
+
+        let clampedX = max(halfViewportWidth, min(worldWidth - halfViewportWidth, newX))
+        let clampedY = max(halfViewportHeight, min(worldHeight - halfViewportHeight, newY))
+
+        gameCamera.position = CGPoint(x: clampedX, y: clampedY)
     }
 }
