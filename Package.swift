@@ -10,29 +10,15 @@ let package = Package(
         .macOS(.v13)
     ],
     products: [
-        .iOSApplication(
+        .executable(
             name: "SQLDungeonCrawler",
-            targets: ["AppModule"],
-            displayVersion: "1.0",
-            bundleVersion: "1",
-            appIcon: .placeholder(icon: .sword),
-            accentColor: .presetColor(.purple),
-            supportedDeviceFamilies: [
-                .pad,
-                .phone
-            ],
-            supportedInterfaceOrientations: [
-                .portrait,
-                .landscapeRight,
-                .landscapeLeft,
-                .portraitUpsideDown
-            ]
+            targets: ["SQLDungeonCrawler"]
         )
     ],
     targets: [
         .executableTarget(
-            name: "AppModule",
-            path: "."
+            name: "SQLDungeonCrawler",
+            path: "Sources"
         )
     ]
 )
