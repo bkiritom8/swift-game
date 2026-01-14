@@ -126,8 +126,9 @@ class GameScene: SKScene {
         maxY = size.height - roomMargin - playerRadius
     }
 
-    // MARK: - Input Handling (iOS - Touch)
+    // MARK: - Input Handling
 
+    #if os(iOS)
     /// Handle touch input on iPhone/iPad
     /// When the player taps, the character moves to that location
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -135,10 +136,9 @@ class GameScene: SKScene {
         let location = touch.location(in: self)
         handleInput(at: location)
     }
+    #endif
 
     #if os(macOS)
-    // MARK: - Input Handling (macOS - Mouse)
-
     /// Handle mouse click on Mac
     /// When the player clicks, the character moves to that location
     override func mouseDown(with event: NSEvent) {
