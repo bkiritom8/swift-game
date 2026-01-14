@@ -14,7 +14,7 @@ let package = Package(
             targets: ["AppModule"],
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .tower),
+            appIcon: .placeholder(icon: .castle),
             accentColor: .presetColor(.purple),
             supportedDeviceFamilies: [
                 .pad,
@@ -24,9 +24,6 @@ let package = Package(
                 .portrait,
                 .landscapeRight,
                 .landscapeLeft
-            ],
-            capabilities: [
-                .camera(purposeString: "AR dungeon experience requires camera access to place the dungeon in your real world environment.")
             ]
         )
     ],
