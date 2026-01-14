@@ -16,16 +16,16 @@ class GameScene: SKScene {
     private var gameCamera: SKCameraNode!
 
     /// World size configuration
-    private let tileSize: CGFloat = 64
+    private let tileSize: CGFloat = 48  // Smaller tiles for better view
     private let worldWidthInTiles: Int = 30  // 30 tiles wide
     private let worldHeightInTiles: Int = 50 // 50 tiles tall
 
-    /// Calculated world dimensions
+    /// Calculated world dimensions (30x48 = 1440 wide, 50x48 = 2400 tall)
     private var worldWidth: CGFloat { CGFloat(worldWidthInTiles) * tileSize }
     private var worldHeight: CGFloat { CGFloat(worldHeightInTiles) * tileSize }
 
     /// Dungeon room boundaries (margin from world edges)
-    private let worldMargin: CGFloat = 40
+    private let worldMargin: CGFloat = 30
 
     /// Minimum and maximum positions the player can move to
     private var minX: CGFloat = 0
@@ -57,13 +57,6 @@ class GameScene: SKScene {
 
         // Ensure user interaction is enabled
         isUserInteractionEnabled = true
-
-        // Debug: Print world and viewport sizes
-        print("🗺️  World size: \(worldWidthInTiles)x\(worldHeightInTiles) tiles")
-        print("🎮 Scene size: \(size) (\(worldWidth)x\(worldHeight) points)")
-        if let view = view {
-            print("📱 Viewport size: \(view.bounds.size)")
-        }
     }
 
     /// Set up the camera to follow the player
@@ -71,8 +64,6 @@ class GameScene: SKScene {
         gameCamera = SKCameraNode()
         camera = gameCamera
         addChild(gameCamera)
-
-        print("📷 Camera created and attached to scene")
     }
 
     /// Create the dungeon room background
@@ -97,8 +88,6 @@ class GameScene: SKScene {
 
         // Add walls around the world boundary
         createWalls()
-
-        print("🏰 Dungeon background created: \(worldWidthInTiles)x\(worldHeightInTiles) tiles")
     }
 
     /// Create visible walls around the world boundary
@@ -133,22 +122,17 @@ class GameScene: SKScene {
         rightWall.position = CGPoint(x: worldWidth - wallThickness / 2, y: worldHeight / 2)
         rightWall.zPosition = -5
         addChild(rightWall)
-
-        print("🧱 World walls created at boundaries")
     }
 
     /// Create and position the player character
     private func setupPlayer() {
-        // Start player at the bottom-center of the world
-        // This gives them room to explore upward and to the sides
-        let startPosition = CGPoint(x: worldWidth / 2, y: worldHeight / 4)
+        // Start player at the center of the world
+        let startPosition = CGPoint(x: worldWidth / 2, y: worldHeight / 2)
         player = Player(position: startPosition)
         addChild(player)
 
         // Position camera at player's starting location
         gameCamera.position = startPosition
-
-        print("👤 Player spawned at: \(startPosition)")
     }
 
     /// Calculate the boundaries where the player can move
@@ -160,8 +144,6 @@ class GameScene: SKScene {
         maxX = worldWidth - worldMargin - playerRadius
         minY = worldMargin + playerRadius
         maxY = worldHeight - worldMargin - playerRadius
-
-        print("🚧 World boundaries: X[\(minX) - \(maxX)], Y[\(minY) - \(maxY)]")
     }
 
     // MARK: - Input Handling
@@ -170,10 +152,8 @@ class GameScene: SKScene {
     /// Handle touch input on iPhone/iPad
     /// When the player taps, the character moves to that location
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        print("👆 Touch detected!")
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
-        print("📍 Touch location: \(location)")
         handleInput(at: location)
     }
     #endif
@@ -182,9 +162,7 @@ class GameScene: SKScene {
     /// Handle mouse click on Mac
     /// When the player clicks, the character moves to that location
     override func mouseDown(with event: NSEvent) {
-        print("🖱️ Mouse click detected!")
         let location = event.location(in: self)
-        print("📍 Click location: \(location)")
         handleInput(at: location)
     }
     #endif
@@ -194,14 +172,10 @@ class GameScene: SKScene {
     /// Process input from either touch or mouse
     /// Moves the player to the target location while respecting boundaries
     private func handleInput(at location: CGPoint) {
-        print("🎯 handleInput called with location: \(location)")
-
         // Clamp the target position to stay within boundaries
         let targetX = max(minX, min(maxX, location.x))
         let targetY = max(minY, min(maxY, location.y))
         let clampedLocation = CGPoint(x: targetX, y: targetY)
-
-        print("✅ Moving player to clamped location: \(clampedLocation)")
 
         // Tell the player to move to this location
         player.move(to: clampedLocation)
@@ -219,7 +193,7 @@ class GameScene: SKScene {
     /// Smoothly move camera to follow the player
     private func updateCamera() {
         // Smoothly interpolate camera position toward player position
-        let lerpFactor: CGFloat = 0.1 // Lower = smoother, higher = more responsive
+        let lerpFactor: CGFloat = 0.15 // Slightly more responsive feel
         let targetPosition = player.position
 
         let newX = gameCamera.position.x + (targetPosition.x - gameCamera.position.x) * lerpFactor
