@@ -22,7 +22,8 @@ let package = Package(
             supportedInterfaceOrientations: [
                 .portrait,
                 .landscapeRight,
-                .landscapeLeft
+                .landscapeLeft,
+                .portraitUpsideDown
             ]
         )
     ],
