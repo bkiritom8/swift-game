@@ -165,8 +165,8 @@ class DungeonScene: ObservableObject {
             mesh: .generateSphere(radius: 0.05),
             materials: [SimpleMaterial(
                 color: .cyan,  // Bright cyan color stands out in dark dungeon
-                isMetallic: true,
-                roughness: 0.3  // Slightly shiny, magical appearance
+                roughness: 0.3,  // Slightly shiny, magical appearance
+                isMetallic: true
             )]
         )
 
