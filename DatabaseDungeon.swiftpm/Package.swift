@@ -13,6 +13,7 @@ let package = Package(
             name: "DatabaseDungeon",
             targets: ["AppModule"],
             bundleIdentifier: "com.yourname.DatabaseDungeon",
+            teamIdentifier: "",
             displayVersion: "1.0",
             bundleVersion: "1",
             accentColor: .presetColor(.purple),
