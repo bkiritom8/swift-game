@@ -208,8 +208,8 @@ class DungeonScene: ObservableObject {
      - Parameter arView: The AR view to perform raycasting
      */
     func movePlayer(to point: CGPoint, in arView: ARView) {
-        guard let dungeonAnchor = dungeonAnchor,
-              playerEntity != nil else { return }
+        guard let dungeonAnchor = dungeonAnchor else { return }
+        guard playerEntity != nil else { return }
 
         // Perform a raycast from the tap point to find what was hit in the scene
         // We're looking for collision with the dungeon floor
