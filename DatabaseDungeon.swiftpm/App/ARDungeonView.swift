@@ -1,6 +1,7 @@
 import SwiftUI
 import ARKit
 import RealityKit
+import AVFoundation
 
 // ARDungeonView is the main AR experience screen.
 // It wraps ARViewContainer (a UIViewRepresentable) with a SwiftUI overlay
@@ -66,23 +67,32 @@ struct ARViewContainer: UIViewRepresentable {
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
-
-        // Disable auto-session so our manual configuration isn't overridden when the view appears.
         arView.automaticallyConfigureSession = false
-
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
-        configuration.environmentTexturing = .automatic
-        arView.session.run(configuration)
 
         let coordinator = context.coordinator
         coordinator.arView = arView
         coordinator.dungeonScene = dungeonScene
+        arView.session.delegate = coordinator
 
         let tap = UITapGestureRecognizer(target: coordinator,
                                          action: #selector(Coordinator.handleTap(_:)))
         arView.addGestureRecognizer(tap)
-        arView.session.delegate = coordinator
+
+        // session.run() silently fails if camera permission hasn't been granted yet.
+        // Explicitly request access first, then start the session on main once granted.
+        AVCaptureDevice.requestAccess(for: .video) { granted in
+            DispatchQueue.main.async {
+                guard granted else {
+                    coordinator.coachingMessage?.wrappedValue =
+                        "Camera access denied — enable it in Settings > Privacy > Camera"
+                    return
+                }
+                let configuration = ARWorldTrackingConfiguration()
+                configuration.planeDetection = [.horizontal]
+                configuration.environmentTexturing = .automatic
+                arView.session.run(configuration)
+            }
+        }
 
         return arView
     }
