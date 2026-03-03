@@ -30,7 +30,8 @@ let package = Package(
                 .landscapeRight,
                 .landscapeLeft,
                 .portraitUpsideDown
-            ]
+            ],
+            additionalInfoPlistContentFilePath: "App/Info.plist"
         )
     ],
     targets: [
