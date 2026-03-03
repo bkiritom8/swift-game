@@ -167,12 +167,12 @@ struct ARViewContainer: UIViewRepresentable {
         }
 
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
+            // frameCount is only ever touched on ARKit's serial queue — safe to read/write here.
             frameCount += 1
             guard frameCount % 30 == 0 else { return }
             frameCount = 0
 
-            guard isDungeonPlaced?.wrappedValue == false, arView != nil else { return }
-
+            // All other state (@Binding, ARView) is main-thread-owned — never read it here.
             DispatchQueue.main.async { [weak self] in
                 guard let self = self,
                       let arView = self.arView,
