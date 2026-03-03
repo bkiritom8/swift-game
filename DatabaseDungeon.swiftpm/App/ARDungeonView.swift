@@ -67,6 +67,8 @@ struct ARViewContainer: UIViewRepresentable {
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
+        // We manage the session manually via updateUIView to ensure the view
+        // has real bounds and all coordinator bindings are set before starting.
         arView.automaticallyConfigureSession = false
 
         let coordinator = context.coordinator
@@ -78,29 +80,21 @@ struct ARViewContainer: UIViewRepresentable {
                                          action: #selector(Coordinator.handleTap(_:)))
         arView.addGestureRecognizer(tap)
 
-        // session.run() silently fails if camera permission hasn't been granted yet.
-        // Explicitly request access first, then start the session on main once granted.
-        AVCaptureDevice.requestAccess(for: .video) { granted in
-            DispatchQueue.main.async {
-                guard granted else {
-                    coordinator.coachingMessage?.wrappedValue =
-                        "Camera access denied — enable it in Settings > Privacy > Camera"
-                    return
-                }
-                let configuration = ARWorldTrackingConfiguration()
-                configuration.planeDetection = [.horizontal]
-                configuration.environmentTexturing = .automatic
-                arView.session.run(configuration)
-            }
-        }
-
         return arView
     }
 
+    // updateUIView is called after the view has been laid out with real bounds.
+    // We start the AR session here (once) so the view is properly sized and
+    // all coordinator bindings are guaranteed to be set.
     func updateUIView(_ uiView: ARView, context: Context) {
-        // Keep coordinator bindings fresh whenever SwiftUI re-renders.
-        context.coordinator.isDungeonPlaced = $isDungeonPlaced
-        context.coordinator.coachingMessage = $coachingMessage
+        let coordinator = context.coordinator
+        coordinator.isDungeonPlaced = $isDungeonPlaced
+        coordinator.coachingMessage = $coachingMessage
+
+        if !coordinator.sessionStarted {
+            coordinator.sessionStarted = true
+            coordinator.startARSession()
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -111,13 +105,32 @@ struct ARViewContainer: UIViewRepresentable {
         var dungeonScene: DungeonScene?
         var isDungeonPlaced: Binding<Bool>?
         var coachingMessage: Binding<String>?
+        var sessionStarted = false
 
-        // Track both the model and its parent anchor so we can cleanly remove both.
         private var placementIndicator: ModelEntity?
         private var indicatorAnchor: AnchorEntity?
-
-        // Throttle: session(_:didUpdate:frame:) fires at 60 fps — only process every 30th frame.
         private var frameCount = 0
+
+        // Called from updateUIView on main thread — safe to call session.run() here.
+        func startARSession() {
+            guard let arView = arView else { return }
+
+            // If the user previously denied camera access, tell them rather than
+            // silently showing a black screen.
+            let status = AVCaptureDevice.authorizationStatus(for: .video)
+            if status == .denied || status == .restricted {
+                coachingMessage?.wrappedValue =
+                    "Camera access denied — enable it in Settings \u{203A} Privacy \u{203A} Camera"
+                return
+            }
+
+            // For .notDetermined, session.run() will trigger the iOS permission
+            // dialog automatically. For .authorized, it starts immediately.
+            let configuration = ARWorldTrackingConfiguration()
+            configuration.planeDetection = [.horizontal]
+            configuration.environmentTexturing = .automatic
+            arView.session.run(configuration)
+        }
 
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
             guard let arView = arView, let dungeonScene = dungeonScene else { return }
@@ -140,10 +153,22 @@ struct ARViewContainer: UIViewRepresentable {
             coachingMessage?.wrappedValue = "Tap on the ground to move your character"
         }
 
-        // Called on the ARSession's internal queue — throttle and dispatch UI work to main.
+        // Surface AR session errors into the coaching label so they're visible.
+        func session(_ session: ARSession, didFailWithError error: Error) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                if let arError = error as? ARError, arError.code == .cameraUnauthorized {
+                    self.coachingMessage?.wrappedValue =
+                        "Camera access denied — enable it in Settings \u{203A} Privacy \u{203A} Camera"
+                } else {
+                    self.coachingMessage?.wrappedValue = "AR failed: \(error.localizedDescription)"
+                }
+            }
+        }
+
         func session(_ session: ARSession, didUpdate frame: ARFrame) {
             frameCount += 1
-            guard frameCount % 30 == 0 else { return } // ~2 updates/second
+            guard frameCount % 30 == 0 else { return }
             frameCount = 0
 
             guard isDungeonPlaced?.wrappedValue == false, arView != nil else { return }
@@ -187,7 +212,6 @@ struct ARViewContainer: UIViewRepresentable {
                 placementIndicator = indicator
                 indicatorAnchor = anchor
             } else {
-                // Move the existing anchor to follow the detected plane.
                 indicatorAnchor?.position = position
             }
         }
