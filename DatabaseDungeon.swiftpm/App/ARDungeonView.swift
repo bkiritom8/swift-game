@@ -113,23 +113,22 @@ struct ARViewContainer: UIViewRepresentable {
 
         // Called from updateUIView on main thread — safe to call session.run() here.
         func startARSession() {
-            guard let arView = arView else { return }
-
-            // If the user previously denied camera access, tell them rather than
-            // silently showing a black screen.
-            let status = AVCaptureDevice.authorizationStatus(for: .video)
-            if status == .denied || status == .restricted {
-                coachingMessage?.wrappedValue =
-                    "Camera access denied — enable it in Settings \u{203A} Privacy \u{203A} Camera"
-                return
+            // Explicitly request camera permission so the iOS dialog appears.
+            // session.run() alone does not reliably trigger the prompt in Swift Playgrounds.
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self = self, let arView = self.arView else { return }
+                    guard granted else {
+                        self.coachingMessage?.wrappedValue =
+                            "Camera access denied — enable it in Settings \u{203A} Privacy \u{203A} Camera"
+                        return
+                    }
+                    let configuration = ARWorldTrackingConfiguration()
+                    configuration.planeDetection = [.horizontal]
+                    configuration.environmentTexturing = .automatic
+                    arView.session.run(configuration)
+                }
             }
-
-            // For .notDetermined, session.run() will trigger the iOS permission
-            // dialog automatically. For .authorized, it starts immediately.
-            let configuration = ARWorldTrackingConfiguration()
-            configuration.planeDetection = [.horizontal]
-            configuration.environmentTexturing = .automatic
-            arView.session.run(configuration)
         }
 
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
