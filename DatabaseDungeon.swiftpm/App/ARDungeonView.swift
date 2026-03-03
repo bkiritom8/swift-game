@@ -67,6 +67,9 @@ struct ARViewContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
 
+        // Disable auto-session so our manual configuration isn't overridden when the view appears.
+        arView.automaticallyConfigureSession = false
+
         let configuration = ARWorldTrackingConfiguration()
         configuration.planeDetection = [.horizontal]
         configuration.environmentTexturing = .automatic
@@ -133,7 +136,7 @@ struct ARViewContainer: UIViewRepresentable {
             guard frameCount % 30 == 0 else { return } // ~2 updates/second
             frameCount = 0
 
-            guard isDungeonPlaced?.wrappedValue == false, let arView = arView else { return }
+            guard isDungeonPlaced?.wrappedValue == false, arView != nil else { return }
 
             DispatchQueue.main.async { [weak self] in
                 guard let self = self,
